@@ -23,6 +23,7 @@ from rest_framework.status import (
 )
 from User.models import User
 from User.tasks import send_mail_to_all_users
+from celery_with_django import settings
 
 
 class UserListApi(GenericAPIView):
@@ -41,5 +42,10 @@ class SendMailToUsersApi(GenericAPIView):
     queryset = User.objects.all()
 
     def get(self, request, *args, **kwargs):
-        send_mail_to_all_users.delay()
+        reciever_mail = []
+        for user in self.get_queryset():
+            reciever_mail.append(user.email)
+        send_mail_to_all_users.delay(
+            subject="This is for testing", message="Hii ! celery worked wohoo!", sender=settings.EMAIL_HOST_USER, receiver=reciever_mail
+        )
         return Response(status=HTTP_200_OK)
